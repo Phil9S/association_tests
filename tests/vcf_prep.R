@@ -165,6 +165,31 @@ af_unaf <- as.logical(samples[,2])
 
 vcf_file <- vcf_file[!colnames(vcf_file) %in% PCA_excluded]
 
+# PCA2
+## PCA analysis
+vcf_file_PCA2 <- vcf_file[vcf_file$AF > 0.05,18:ncol(vcf_file)]
+vcf_file_PCA2_t <- as.data.frame(t(vcf_file_PCA2))
+vcf_file_PCA2_t <- vcf_file_PCA2_t[,which(apply(vcf_file_PCA2_t,2,var)!=0)]
+
+PCA2.out <- prcomp(vcf_file_PCA2_t,center = T, scale. = T)
+PCA2s <- as.data.frame(PCA2.out$x[,1:5])
+rm(vcf_file_PCA2,vcf_file_PCA2_t,PCA2.out)
+
+colours <- ifelse(af_unaf == T,"blue","grey")
+colours[which(abs(PCA2s$PC1) > sd(PCA2s$PC1)*3 & abs(PCA2s$PC2) > sd(PCA2s$PC2)*3)] <- "red"
+colours[which(abs(PCA2s$PC2) > sd(PCA2s$PC2)*3 & abs(PCA2s$PC3) > sd(PCA2s$PC3)*3)] <- "red"
+
+png(filename = "association_test_PCA2.png",width = 16,height = 8,units = "in",res = 600)
+layout(matrix(c(1,2), 1, 2, byrow = TRUE))
+plot(abs(PCA2s$PC1),abs(PCA2s$PC2),col=colours,xlab = "PC1",ylab = "PC2",main = "Association tests - PC1 ~ PC2",sub = "Red = Excluded")
+abline(v=sd(PCA2s$PC1)*3, col="red")
+abline(h=sd(PCA2s$PC2)*3, col="red")
+
+plot(abs(PCA2s$PC2),abs(PCA2s$PC3),col=colours,xlab = "PC2",ylab = "PC3",main = "Association tests - PC2 ~ PC3",sub = "Red = Excluded")
+abline(v=sd(PCA2s$PC2)*3, col="red")
+abline(h=sd(PCA2s$PC3)*3, col="red")
+dev.off()
+
 ## Filtering vcf data on various traits - Rarity, Function, Consequence 
 vcf_file <- vcf_file[vcf_file$CONSEQ %in% CONSEQS,]
 vcf_file <- vcf_file[vcf_file$AF < args[3],] # 0.005
